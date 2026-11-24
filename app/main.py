@@ -1,6 +1,21 @@
 """
 Main FastAPI application.
 """
+import numpy as np
+from psycopg2.extensions import register_adapter, AsIs
+
+def _adapt_np_float(val):
+    if np.isnan(val) or np.isinf(val):
+        return AsIs("NULL")
+    return AsIs(float(val))
+
+def _adapt_np_int(val):
+    return AsIs(int(val))
+
+register_adapter(np.float64, _adapt_np_float)
+register_adapter(np.float32, _adapt_np_float)
+register_adapter(np.int64, _adapt_np_int)
+register_adapter(np.int32, _adapt_np_int)
 import logging
 import os
 from contextlib import asynccontextmanager
