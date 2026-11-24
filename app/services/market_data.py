@@ -53,21 +53,26 @@ class MarketDataService:
     ) -> pd.DataFrame:
         """
         Fetch data from Yahoo Finance.
-
-        Args:
-            symbol: Trading symbol
-            start_date: Start date
-            end_date: End date
-            interval: Data interval
-
-        Returns:
-            DataFrame with OHLCV data
         """
-        ticker = yf.Ticker(symbol)
-        df = ticker.history(start=start_date, end=end_date, interval=interval)
+        start_str = start_date.strftime("%Y-%m-%d")
+        end_str = end_date.strftime("%Y-%m-%d")
 
-        # Standardize column names
-        df.columns = [col.lower() for col in df.columns]
+        df = yf.download(
+            symbol,
+            start=start_str,
+            end=end_str,
+            interval=interval,
+            progress=False,
+        )
+
+        if df is None or df.empty:
+            return pd.DataFrame()
+
+        # Flatten MultiIndex columns returned by newer yfinance versions
+        if isinstance(df.columns, pd.MultiIndex):
+            df.columns = [col[0].lower() for col in df.columns]
+        else:
+            df.columns = [str(col).lower() for col in df.columns]
 
         # Ensure required columns exist
         required_columns = ["open", "high", "low", "close", "volume"]
